@@ -36,6 +36,7 @@ const (
 	JUNO  Token = "JUNO"
 	MATIC Token = "MATIC"
 	MINA  Token = "MINA"
+	MON	  Token = "MON"
 	NAM   Token = "NAM"
 	NEAR  Token = "NEAR"
 	OSMO  Token = "OSMO"
@@ -83,6 +84,8 @@ func (t Token) ChainName() string {
 		return "Polygon"
 	case MINA:
 		return "Mina Protocol"
+	case MON:
+		return "Monad"
 	case NAM:
 		return "Namada"
 	case NEAR:
@@ -112,7 +115,7 @@ func (t Token) ChainName() string {
 	}
 }
 
-var Tokens = []Token{ADA, ALGO, APT, ATOM, AVAIL, AVAX, BLD, BNB, DOT, EGLD, GRT, HBAR, JUNO, MATIC, MINA, NAM, NEAR, OSMO, PLS, REGEN, RUNE, SEI, SOL, STARS, SUI, TIA, XNO}
+var Tokens = []Token{ADA, ALGO, APT, ATOM, AVAIL, AVAX, BLD, BNB, DOT, EGLD, GRT, HBAR, JUNO, MATIC, MINA, MON, NAM, NEAR, OSMO, PLS, REGEN, RUNE, SEI, SOL, STARS, SUI, TIA, XNO}
 
 // NewState returns a new fresh state.
 func NewState() ChainState {
@@ -178,6 +181,12 @@ func newValues(token Token) (int, error) {
 		currVal, err = Polygon()
 	case MINA:
 		currVal, err = Mina()
+	case MON:
+		log.Println("Attempting to calculate Monad Nakamoto coefficient...")
+		currVal, err = Monad()
+		if err != nil {
+			log.Printf("Error calculating Monad Nakamoto coefficient: %v", err)
+		}
 	case NAM:
 		currVal, err = Namada()
 	case NEAR:

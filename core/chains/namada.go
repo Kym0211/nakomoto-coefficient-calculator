@@ -22,8 +22,8 @@ type NamadaValidator struct {
 type NamadaValidatorsResponse struct {
 	Result struct {
 		Validators []NamadaValidator `json:"validators"`
-		Total      string            `json:"total"` // "133"
-		Count      string            `json:"count"` // "100"
+		Total      string            `json:"total"` 
+		Count      string            `json:"count"`
 	} `json:"result"`
 }
 

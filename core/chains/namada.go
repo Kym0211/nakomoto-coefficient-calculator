@@ -3,13 +3,13 @@ package chains
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"math/big"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	utils "github.com/xenowits/nakamoto-coefficient-calculator/core/utils"
@@ -22,66 +22,64 @@ type NamadaValidator struct {
 type NamadaValidatorsResponse struct {
 	Result struct {
 		Validators []NamadaValidator `json:"validators"`
+		Total      string            `json:"total"` // "133"
+		Count      string            `json:"count"` // "100"
 	} `json:"result"`
 }
 
-type NamadaTotalVotingPowerResponse struct {
-	TotalVotingPower string `json:"totalVotingPower"`
-}
-
 func Namada() (int, error) {
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancelFunc()
 
-	// Fetch validators
-	validatorsURL := "https://namada-archive.tm.p2p.org/validators"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, validatorsURL, nil)
-	if err != nil {
-		log.Println(err)
-		return 0, errors.New("create get request for namada validators")
-	}
-	resp, err := new(http.Client).Do(req)
-	if err != nil {
-		log.Println(err)
-		return 0, errors.New("get request unsuccessful for namada validators")
-	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return 0, err
-	}
-	var valResp NamadaValidatorsResponse
-	err = json.Unmarshal(body, &valResp)
-	if err != nil {
-		return 0, err
+	var allValidators []NamadaValidator
+	page := 1
+	totalValidators := 0
+	
+	for {
+		validatorsURL := fmt.Sprintf("https://rpc.namada.validatus.com/validators?page=%d&per_page=100", page)
+		
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, validatorsURL, nil)
+		if err != nil {
+			return 0, fmt.Errorf("create request error: %v", err)
+		}
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return 0, fmt.Errorf("rpc fetch error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return 0, err
+		}
+
+		var valResp NamadaValidatorsResponse
+		err = json.Unmarshal(body, &valResp)
+		if err != nil {
+			return 0, fmt.Errorf("json parse error: %v", err)
+		}
+
+		allValidators = append(allValidators, valResp.Result.Validators...)
+
+		totalFromServer, _ := strconv.Atoi(valResp.Result.Total)
+		if totalValidators == 0 {
+			totalValidators = totalFromServer
+		}
+
+		if len(allValidators) >= totalValidators || len(valResp.Result.Validators) == 0 {
+			break
+		}
+
+		page++
+		time.Sleep(200 * time.Millisecond)
 	}
 
-	// Fetch total voting power
-	totalPowerURL := "https://api-namada-mainnet-indexer.tm.p2p.org/api/v1/pos/voting-power"
-	req2, err := http.NewRequestWithContext(ctx, http.MethodGet, totalPowerURL, nil)
-	if err != nil {
-		log.Println(err)
-		return 0, errors.New("create get request for namada total voting power")
-	}
-	resp2, err := new(http.Client).Do(req2)
-	if err != nil {
-		log.Println(err)
-		return 0, errors.New("get request unsuccessful for namada total voting power")
-	}
-	defer resp2.Body.Close()
-	body2, err := io.ReadAll(resp2.Body)
-	if err != nil {
-		return 0, err
-	}
-	var totalResp NamadaTotalVotingPowerResponse
-	err = json.Unmarshal(body2, &totalResp)
-	if err != nil {
-		return 0, err
-	}
-
-	// Parse voting powers
 	var votingPowers []*big.Int
-	for _, v := range valResp.Result.Validators {
+	totalVotingPower := big.NewInt(0)
+
+	for _, v := range allValidators {
 		vp := new(big.Int)
 		_, ok := vp.SetString(v.VotingPower, 10)
 		if !ok {
@@ -89,22 +87,19 @@ func Namada() (int, error) {
 			continue
 		}
 		votingPowers = append(votingPowers, vp)
+		totalVotingPower.Add(totalVotingPower, vp)
 	}
 
-	// Sort voting powers descending
-	sort.Slice(votingPowers, func(i, j int) bool { return votingPowers[i].Cmp(votingPowers[j]) > 0 })
-
-	totalVotingPower := new(big.Int)
-	_, ok := totalVotingPower.SetString(totalResp.TotalVotingPower, 10)
-	if !ok {
-		return 0, fmt.Errorf("error parsing total voting power: %s", totalResp.TotalVotingPower)
+	if len(votingPowers) == 0 {
+		return 0, fmt.Errorf("no validators found")
 	}
-	// Multiply by 10^6 as required by Namada
-	multiplier := big.NewInt(1_000_000)
-	totalVotingPower.Mul(totalVotingPower, multiplier)
+
+	sort.Slice(votingPowers, func(i, j int) bool {
+		return votingPowers[i].Cmp(votingPowers[j]) > 0
+	})
+	fmt.Println("Total voting power :", totalVotingPower)
 
 	nakamotoCoefficient := utils.CalcNakamotoCoefficientBigInt(totalVotingPower, votingPowers)
-	fmt.Println("The Nakamoto coefficient for Namada is", nakamotoCoefficient)
 
 	return nakamotoCoefficient, nil
 }

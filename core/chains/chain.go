@@ -27,12 +27,15 @@ const (
 	ATOM  Token = "ATOM"
 	AVAIL Token = "AVAIL"
 	AVAX  Token = "AVAX"
+	BASE  Token = "BASE"
 	BLD   Token = "BLD"
 	BNB   Token = "BNB"
 	DOT   Token = "DOT"
 	EGLD  Token = "EGLD"
+	ETH   Token = "ETH"
 	GRT   Token = "GRT"
 	HBAR  Token = "HBAR"
+	HYPE  Token = "HYPE"
 	JUNO  Token = "JUNO"
 	MATIC Token = "MATIC"
 	MINA  Token = "MINA"
@@ -41,11 +44,13 @@ const (
 	NEAR  Token = "NEAR"
 	OSMO  Token = "OSMO"
 	PLS   Token = "PLS"
+	PLUME Token = "PLUME"
 	REGEN Token = "REGEN"
 	RUNE  Token = "RUNE"
 	SEI   Token = "SEI"
 	SOL   Token = "SOL"
 	STARS Token = "STARS"
+	STORY Token = "STORY"
 	SUI   Token = "SUI"
 	TIA   Token = "TIA"
 	XNO   Token = "XNO"
@@ -66,6 +71,8 @@ func (t Token) ChainName() string {
 		return "Avail DA"
 	case AVAX:
 		return "Avalanche"
+	case BASE:
+		return "Base"
 	case BLD:
 		return "Agoric"
 	case BNB:
@@ -74,10 +81,14 @@ func (t Token) ChainName() string {
 		return "Polkadot"
 	case EGLD:
 		return "MultiversX"
+	case ETH:
+		return "Ethereum"
 	case GRT:
 		return "Graph Protocol"
 	case HBAR:
 		return "Hedera"
+	case HYPE:
+		return "Hype"
 	case JUNO:
 		return "Juno"
 	case MATIC:
@@ -94,6 +105,8 @@ func (t Token) ChainName() string {
 		return "Osmosis"
 	case PLS:
 		return "Pulsechain"
+	case PLUME:
+		return "Plume"
 	case REGEN:
 		return "Regen Network"
 	case RUNE:
@@ -104,6 +117,8 @@ func (t Token) ChainName() string {
 		return "Solana"
 	case STARS:
 		return "Stargaze"
+	case STORY:
+		return "Story Protocol"
 	case SUI:
 		return "Sui Protocol"
 	case TIA:
@@ -115,7 +130,7 @@ func (t Token) ChainName() string {
 	}
 }
 
-var Tokens = []Token{ADA, ALGO, APT, ATOM, AVAIL, AVAX, BLD, BNB, DOT, EGLD, GRT, HBAR, JUNO, MATIC, MINA, MON, NAM, NEAR, OSMO, PLS, REGEN, RUNE, SEI, SOL, STARS, SUI, TIA, XNO}
+var Tokens = []Token{ADA, ALGO, APT, ATOM, AVAIL, AVAX, BASE, BLD, BNB, DOT, EGLD, ETH, GRT, HBAR, HYPE, JUNO, MATIC, MINA, MON, NAM, NEAR, OSMO, PLS, PLUME, REGEN, RUNE, SEI, SOL, STARS, STORY, SUI, TIA, XNO}
 
 // NewState returns a new fresh state.
 func NewState() ChainState {
@@ -163,6 +178,8 @@ func newValues(token Token) (int, error) {
 		currVal, err = Avail()
 	case AVAX:
 		currVal, err = Avalanche()
+	case BASE:
+		currVal, err = Base()
 	case BLD:
 		currVal, err = Agoric()
 	case BNB:
@@ -171,10 +188,14 @@ func newValues(token Token) (int, error) {
 		currVal, err = Polkadot()
 	case EGLD:
 		currVal, err = MultiversX()
+	case ETH:
+		currVal, err = Ethereum()
 	case GRT:
 		currVal, err = Graph()
 	case HBAR:
 		currVal, err = Hedera()
+	case HYPE:
+		currVal, err = Hyperliquid()
 	case JUNO:
 		currVal, err = Juno()
 	case MATIC:
@@ -195,6 +216,8 @@ func newValues(token Token) (int, error) {
 		currVal, err = Osmosis()
 	case PLS:
 		currVal, err = Pulsechain()
+	case PLUME:
+		currVal, err = Plume()
 	case REGEN:
 		currVal, err = Regen()
 	case RUNE:
@@ -213,6 +236,8 @@ func newValues(token Token) (int, error) {
 		if err != nil {
 			log.Printf("Error calculating Stargaze Nakamoto coefficient: %v", err)
 		}
+	case STORY:
+		currVal, err = Story()
 	case SUI:
 		currVal, err = Sui()
 	case TIA:
